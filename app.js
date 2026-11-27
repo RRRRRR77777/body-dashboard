@@ -1,12 +1,12 @@
 /* 體態管理師・週報儀表板（LINE MINI App）
  * 流程：LIFF 登入 → 取得 ID Token → POST 給 Apps Script（?api=dash）→ Apps Script 向 LINE 驗證是本人才回傳彙總數字 → 畫圖
- * 網頁本身不存任何資料、不放任何金鑰。網址加 ?demo=1 會用假資料展示（不連線）。
+ * 網頁本身不存任何資料、不放任何金鑰。網址加 ?preview=1（或 ?demo=1） 會用假資料展示（不連線）。
  */
 (function () {
   const CFG = window.DASH_CONFIG || {};
   const $app = document.getElementById('app');
   const qs = new URLSearchParams(location.search);
-  const DEMO = qs.get('demo') === '1';
+  const DEMO = qs.get('demo') === '1' || qs.get('preview') === '1';  // 展示模式：?preview=1（正式用）或 ?demo=1
   const WD = ['一', '二', '三', '四', '五', '六', '日'];
   const COL = { g: 'var(--g)', y: 'var(--y)', r: 'var(--r)' };
   const HEX = { g: '#22C55E', y: '#F5B83D', r: '#F0616D' };
@@ -134,7 +134,7 @@
     if (ss[0] !== 'g') notes.push(a.kcal > g.kcal ? '熱量偏高' : '熱量偏低');
     const thisWeek = D.end >= D.today, mg = mealGrid(D);
     $app.innerHTML =
-      '<div class="nav"><button id="prev">‹ 上一週</button><span>' + (DEMO ? '展示模式（假資料）' : '體態管理師・週報') + '</span><button id="next"' + (thisWeek ? ' disabled' : '') + '>下一週 ›</button></div>' +
+      '<div class="nav"><button id="prev">‹ 上一週</button><span>' + (DEMO ? '預覽・範例資料' : '體態管理師・週報') + '</span><button id="next"' + (thisWeek ? ' disabled' : '') + '>下一週 ›</button></div>' +
       '<div class="sub">' + md(D.start) + '（一）～ ' + md(D.end) + '（日）' + (thisWeek ? '・本週進行中' : '') + '</div><h1>本週進度報告</h1>' +
       '<div class="status"><div><small>整體狀態</small><b>' + esc(notes.length ? notes.join('・') : '各項指標都在目標內') + '</b></div><span class="pill" style="background:' + HEX[overall] + ';color:' + (overall === 'y' ? '#1F2937' : '#fff') + '">' + TXT[overall] + '</span></div>' +
       '<div class="grid">' + kpi('平均熱量', a.kcal, g.kcal, '大卡', 'band', D.prevLogged ? D.prevAvg.kcal : null) + kpi('平均蛋白質', a.pro, g.pro, '克', 'min', D.prevLogged ? D.prevAvg.pro : null) +
@@ -148,7 +148,7 @@
       '<div class="card"><div class="ct">下週行動項目<span>依本週數據自動產生</span></div>' + actions(D) + '</div>' +
       '<div class="card"><div class="ct">運動</div><div class="row"><span>運動</span><b>' + D.exer.days + ' 天・' + D.exer.min + ' 分鐘</b></div><div class="row"><span>重訓</span><b>' + D.lift.days + ' 天</b></div>' +
       (D.lift.prs.length ? '<div class="row"><span>進步</span><b>' + esc(D.lift.prs.join('、')) + '</b></div>' : '') + '</div>' +
-      '<div class="foot">網頁版本 1127b・資料來源：飲食控制紀錄（Google 試算表）・目標 熱量 ' + fmt(g.kcal) + ' 大卡、蛋白質 ' + g.pro + ' 克、脂肪 ' + g.fat + ' 克</div>';
+      '<div class="foot">網頁版本 1127c・資料來源：飲食控制紀錄（Google 試算表）・目標 熱量 ' + fmt(g.kcal) + ' 大卡、蛋白質 ' + g.pro + ' 克、脂肪 ' + g.fat + ' 克</div>';
     document.getElementById('prev').onclick = () => load(addDays(D.start, -1));
     document.getElementById('next').onclick = () => load(addDays(D.end, 7));
     window.scrollTo(0, 0);
