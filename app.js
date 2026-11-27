@@ -148,7 +148,7 @@
       '<div class="card"><div class="ct">下週行動項目<span>依本週數據自動產生</span></div>' + actions(D) + '</div>' +
       '<div class="card"><div class="ct">運動</div><div class="row"><span>運動</span><b>' + D.exer.days + ' 天・' + D.exer.min + ' 分鐘</b></div><div class="row"><span>重訓</span><b>' + D.lift.days + ' 天</b></div>' +
       (D.lift.prs.length ? '<div class="row"><span>進步</span><b>' + esc(D.lift.prs.join('、')) + '</b></div>' : '') + '</div>' +
-      '<div class="foot">資料來源：飲食控制紀錄（Google 試算表）・目標 熱量 ' + fmt(g.kcal) + ' 大卡、蛋白質 ' + g.pro + ' 克、脂肪 ' + g.fat + ' 克</div>';
+      '<div class="foot">網頁版本 1127b・資料來源：飲食控制紀錄（Google 試算表）・目標 熱量 ' + fmt(g.kcal) + ' 大卡、蛋白質 ' + g.pro + ' 克、脂肪 ' + g.fat + ' 克</div>';
     document.getElementById('prev').onclick = () => load(addDays(D.start, -1));
     document.getElementById('next').onclick = () => load(addDays(D.end, 7));
     window.scrollTo(0, 0);
