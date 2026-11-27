@@ -83,6 +83,23 @@
       line('熱量', x => rag(x.kcal, g.kcal, 'band')) + line('蛋白質', x => rag(x.pro, g.pro, 'min')) + line('脂肪', x => rag(x.fat, g.fat, 'max')) + '</div>';
   }
 
+  /** 三餐回報：有記錄＝綠，已過時間沒記錄＝橘色斜線「未回報」，還沒到＝灰 */
+  const MEAL3 = [['早餐', 10.5], ['午餐', 14.5], ['晚餐', 22]];
+  function mealGrid(D) {
+    const t = new Date(Date.now() + 8 * 3600e3), hour = t.getUTCHours() + t.getUTCMinutes() / 60;
+    let miss = 0;
+    const cell = (x, m, cut) => {
+      const k = x.meals[m];
+      if (k) return '<div class="mc ok">' + fmt(k) + '</div>';
+      if (x.d > D.today || (x.d === D.today && hour < cut)) return '<div class="mc"></div>';
+      miss++;
+      return '<div class="mc miss">未回報</div>';
+    };
+    const rows = MEAL3.map(([m, cut]) => '<span>' + m + '</span>' + D.days.map(x => cell(x, m, cut)).join('')).join('');
+    return { miss: miss, html: '<div class="hm mg"><span></span>' + WD.map(w => '<span>' + w + '</span>').join('') + rows + '</div>' +
+      '<div class="leg"><span><i style="background:var(--g)"></i>有記錄（大卡）</span><span><i class="miss"></i>未回報</span><span><i style="background:var(--line)"></i>還沒到</span></div>' };
+  }
+
   function mealsCard(D) {
     const sum = {}, cnt = {};
     D.days.forEach(x => Object.keys(x.meals).forEach(m => { sum[m] = (sum[m] || 0) + x.meals[m]; cnt[m] = (cnt[m] || 0) + 1; }));
@@ -96,6 +113,8 @@
   function actions(D) {
     const a = D.avg, g = D.goals, out = [];
     if (D.logged < D.days.filter(x => x.d <= D.today).length) out.push('有 ' + D.days.filter(x => x.d <= D.today && !x.n).length + ' 天沒有紀錄，平均值會偏低；記得每餐都記');
+    const mm = mealGrid(D).miss;
+    if (mm) out.push('有 ' + mm + ' 餐未回報，補記時在 LINE 打「昨天 晚餐」之類的字再傳照片或文字');
     if (a.fat > g.fat * 1.1) out.push('脂肪平均 ' + fmt(a.fat) + ' 克（目標 ' + g.fat + '）：外食先選清湯、少炸物，記錄時用「調整油脂」修正');
     if (a.pro < g.pro * 0.9) out.push('蛋白質平均 ' + fmt(a.pro) + ' 克（目標 ' + g.pro + '）：早餐加一份豆漿或蛋');
     if (D.topMeals && D.topMeals.length && D.topMeals[0].n >= 2) out.push('超標的日子多半是' + D.topMeals[0].meal + '吃最多，先從這一餐調整');
@@ -113,7 +132,7 @@
     if (ss[1] !== 'g') notes.push('蛋白質偏低');
     if (ss[2] !== 'g') notes.push('脂肪超標');
     if (ss[0] !== 'g') notes.push(a.kcal > g.kcal ? '熱量偏高' : '熱量偏低');
-    const thisWeek = D.end >= D.today;
+    const thisWeek = D.end >= D.today, mg = mealGrid(D);
     $app.innerHTML =
       '<div class="nav"><button id="prev">‹ 上一週</button><span>' + (DEMO ? '展示模式（假資料）' : '體態管理師・週報') + '</span><button id="next"' + (thisWeek ? ' disabled' : '') + '>下一週 ›</button></div>' +
       '<div class="sub">' + md(D.start) + '（一）～ ' + md(D.end) + '（日）' + (thisWeek ? '・本週進行中' : '') + '</div><h1>本週進度報告</h1>' +
@@ -124,6 +143,7 @@
       '<div class="leg"><span><i style="background:var(--p)"></i>蛋白質</span><span><i style="background:var(--f)"></i>脂肪</span><span><i style="background:var(--c)"></i>碳水</span><span>－－ 目標</span></div></div>' +
       '<div class="card"><div class="ct">體重趨勢<span>近 4 週・綠線＝3 筆移動平均</span></div>' + weightChart(D) + '</div>' +
       '<div class="card"><div class="ct">達標燈號<span>綠 達標・黃 注意・紅 落後</span></div>' + heatmap(D) + '</div>' +
+      '<div class="card"><div class="ct">三餐回報<span>' + (mg.miss ? '本週有 ' + mg.miss + ' 餐未回報' : '三餐都有回報') + '</span></div>' + mg.html + '</div>' +
       '<div class="card"><div class="ct">各餐熱量<span>有紀錄的日子</span></div>' + mealsCard(D) + '</div>' +
       '<div class="card"><div class="ct">下週行動項目<span>依本週數據自動產生</span></div>' + actions(D) + '</div>' +
       '<div class="card"><div class="ct">運動</div><div class="row"><span>運動</span><b>' + D.exer.days + ' 天・' + D.exer.min + ' 分鐘</b></div><div class="row"><span>重訓</span><b>' + D.lift.days + ' 天</b></div>' +
@@ -155,10 +175,10 @@
   function demoData(end) {
     const today = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
     const ref = end || today, wd = (new Date(ref + 'T12:00:00+08:00').getUTCDay() + 6) % 7, start = addDays(ref, -wd);
-    const plan = [[420, 650, 600], [380, 720, 540], [450, 600, 820], [0, 0, 0], [400, 880, 610], [350, 560, 700], [480, 620, 520]];
+    const plan = [[420, 650, 600], [380, 720, 0], [450, 600, 820], [0, 0, 0], [400, 880, 610], [350, 560, 700], [480, 620, 520]];
     const days = plan.map((p, i) => {
       const d = addDays(start, i), k = p[0] + p[1] + p[2];
-      return { d: d, kcal: k, pro: k * 0.065, fat: k * 0.032, carb: k * 0.12, n: k ? 6 : 0, meals: k ? { 早餐: p[0], 午餐: p[1], 晚餐: p[2] } : {} };
+      return { d: d, kcal: k, pro: k * 0.065, fat: k * 0.032, carb: k * 0.12, n: k ? 6 : 0, meals: Object.fromEntries(['早餐', '午餐', '晚餐'].map((m, j) => [m, p[j]]).filter(e => e[1])) };
     });
     const logged = days.filter(x => x.n), avg = k => logged.reduce((s, x) => s + x[k], 0) / logged.length;
     return {
