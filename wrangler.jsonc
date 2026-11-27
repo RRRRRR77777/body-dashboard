@@ -1,6 +1,6 @@
 // Cloudflare Workers 設定：只放靜態網頁（沒有後端程式）
 {
-  "name": "bodyops",
+  "name": "app",
   "compatibility_date": "2026-11-26",
   "workers_dev": true,
   "assets": { "directory": "./" }
